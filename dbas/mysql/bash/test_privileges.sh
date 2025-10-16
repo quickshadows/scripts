@@ -48,7 +48,6 @@ function test_query_from_gen_user() {
 }
 
 ### Проверка с дополнительного пользователя.
-
 # function test_query_from_user() {
 #     local label="$1"
 #     local sql="$2"
