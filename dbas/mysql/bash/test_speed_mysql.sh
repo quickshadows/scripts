@@ -4,7 +4,7 @@
 MYSQL_HOST="81.19.135.52"
 MYSQL_PORT=3306
 MYSQL_USER="gen_user"
-MYSQL_PASSWORD='Passwd123'
+MYSQL_PASSWORD='Passwd'
 MYSQL_DB="default_db"
 
 # Параметры теста
