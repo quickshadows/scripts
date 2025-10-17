@@ -11,12 +11,12 @@ fi
 MYSQLHOST="147.45.212.3"
 MYSQLUSER="gen_user"
 MYSQLUSER1="user"
-MYSQLPASSWORD="Passwd"
+MYSQLPASSWORD="Passwd123"
 MYSQLPORT="3306"
 MYSQLDATABASE="default_db"
 
 DB_ID=$(twc db list | egrep "$MYSQLHOST" | awk '{print $1}')
-INSTANCE_ID=$(twc db instance list $DB_ID | egrep "$MYSQLDATABASE")
+INSTANCE_ID=$(twc db instance list $DB_ID | egrep "$MYSQLDATABASE" | awk '{print $1}')
 
 twc db user create $DB_ID --login "$MYSQLUSER1" --password "$MYSQLPASSWORD" --privileges ""
 
@@ -37,7 +37,8 @@ function test_query_from_gen_user() {
     echo "$sql" > "$TMP_SQL"
 
     local output
-    output=$(mysql -u "$MYSQLUSER" -h "$MYSQLHOST" -P "$MYSQLPORT" "$MYSQLDATABASE" < "$TMP_SQL")
+    output=$(mysql -u "$MYSQLUSER" -h "$MYSQLHOST" -P "$MYSQLPORT" -p"$MYSQLPASSWORD" "$MYSQLDATABASE" < "$TMP_SQL")
+
 
     if [[ $? -eq 0 ]]; then
         echo "gen_user [PASS] $label"
@@ -49,7 +50,7 @@ function test_query_from_gen_user() {
 }
 
 ### Проверка с дополнительного пользователя.
-# function test_query_from_user() {
+# function test_query_from_gen_user() {
 #     local label="$1"
 #     local sql="$2"
 
@@ -82,10 +83,10 @@ curl "https://timeweb.cloud/api/v1/databases/${DB_ID}/admins/${ID_USER}" \
   -X 'PATCH' \
   -H 'content-type: application/json' \
   -H "authorization: Bearer ${TOKEN}" \
-  --data-raw '{"privileges":["CREATE_DB","CREATE","INSERT","SELECT","UPDATE","DELETE","CREATE_VIEW","SHOW_VIEW","INDEX","ALTER","LOCK_TABLES","REFERENCES","TRIGGER","CREATE_ROUTINE","ALTER_ROUTINE","CREATE_TEMPORARY_TABLES","EVENT","DROP","CREATE_USER","PROCESS","SLOW_LOG"],"instance_id":'"${INSTANCE_ID}"',"for_all":false}' > /dev/null 2>&1
+  --data-raw '{"privileges":["CREATE_DB","CREATE","INSERT","SELECT","UPDATE","DELETE","CREATE_VIEW","SHOW_VIEW","INDEX","ALTER","LOCK_TABLES","REFERENCES","TRIGGER","CREATE_ROUTINE","ALTER_ROUTINE","CREATE_TEMPORARY_TABLES","EVENT","DROP","CREATE_USER","PROCESS","SLOW_LOG"],"instance_id":'"${INSTANCE_ID}"',"for_all":false}'
 #  echo -e "\n✔ Пользователь $ID_USER обработан"
 done
-  sleep 5
+  sleep 15
 }
 
 #сбрасываем права
@@ -101,13 +102,13 @@ curl "https://timeweb.cloud/api/v1/databases/${DB_ID}/admins/${ID_USER}" \
 
 done
 
-sleep 5
+sleep 30
 }
 
 off_prava
 #CREATE_DB
-
 test_query_from_gen_user "CREATE" "CREATE DATABASE test_privs;"
+
 # CREATE
 test_query_from_gen_user "CREATE" "CREATE TABLE test_table (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -116,32 +117,32 @@ test_query_from_gen_user "CREATE" "CREATE TABLE test_table (
 );"
 
 # INSERT
-test_query_from_user "INSERT" "SELECT * FROM test_table;"
+test_query_from_gen_user "INSERT" "SELECT * FROM test_table;"
 
 # SELECT
-test_query_from_user "SELECT" "SELECT * FROM test_table;"
+test_query_from_gen_user "SELECT" "SELECT * FROM test_table;"
 
 # UPDATE
-test_query_from_user "UPDATE" "UPDATE test_table SET value = 99 WHERE name = 'alpha';"
+test_query_from_gen_user "UPDATE" "UPDATE test_table SET value = 99 WHERE name = 'alpha';"
 
 #DELETE
-test_query_from_user "DELETE" "DELETE FROM test_table WHERE name = 'beta';"
+test_query_from_gen_user "DELETE" "DELETE FROM test_table WHERE name = 'beta';"
 
 #CREATE_VIEW
-test_query_from_user "CREATE_VIEW" "CREATE VIEW test_view AS SELECT id, name FROM test_table;"
+test_query_from_gen_user "CREATE_VIEW" "CREATE VIEW test_view AS SELECT id, name FROM test_table;"
 
 # SHOW_VIEW
 test_query_from_gen_user "SHOW_VIEW" "SHOW CREATE VIEW test_view;"
 
-test_query_from_user "INDEX" "DROP INDEX idx_value ON test_table(valye); DROP INDEX idx_value ON test_table;"
+test_query_from_gen_user "INDEX" "DROP INDEX idx_value ON test_table(valye); DROP INDEX idx_value ON test_table;"
 
 test_query_from_gen_user "ALTER" "ALTER TABLE test_table ADD COLUMN updated_at TIMESTAMP NULL;"
 
 # LOCK_TABLES
-test_query_from_user "LOCK_TABLES" "LOCK TABLES test_table READ; UNLOCK TABLES;"
+test_query_from_gen_user "LOCK_TABLES" "LOCK TABLES test_table READ; UNLOCK TABLES;"
 
 # REFERENCES
-test_query_from_user "REFERENCES" "CREATE TABLE ref_table (
+test_query_from_gen_user "REFERENCES" "CREATE TABLE ref_table (
   id INT PRIMARY KEY,
   test_id INT,
   FOREIGN KEY (test_id) REFERENCES test_table(id)
@@ -195,20 +196,22 @@ test_query_from_gen_user "SLOW_LOG" "SELECT * FROM mysql.slow_log LIMIT 5;"
 
 
 #Включаем все права
-for ID_USER in "${ID_USERS[@]}"; do
-curl "https://timeweb.cloud/api/v1/databases/${DB_ID}/admins/${ID_USER}" \
-  -X 'PATCH' \
-  -H 'content-type: application/json' \
-  -H "authorization: Bearer ${TOKEN}" \
-  --data-raw '{"privileges":["SELECT","INSERT","UPDATE","DELETE","CREATE","TRUNCATE","REFERENCES","TRIGGER","TEMPORARY","CREATEDB"],"instance_id":'"${INSTANCE_ID}"',"for_all":false}'
-  echo -e "\n✔ Пользователь $ID_USER обработан"
-#  echo "URL: https://timeweb.cloud/api/v1/databases/${DB_ID}/admins/${ID_USER}"
+# for ID_USER in "${ID_USERS[@]}"; do
+# curl "https://timeweb.cloud/api/v1/databases/${DB_ID}/admins/${ID_USER}" \
+#   -X 'PATCH' \
+#   -H 'content-type: application/json' \
+#   -H "authorization: Bearer ${TOKEN}" \
+#   --data-raw '{"privileges":["SELECT","INSERT","UPDATE","DELETE","CREATE","TRUNCATE","REFERENCES","TRIGGER","TEMPORARY","CREATEDB"],"instance_id":'"${INSTANCE_ID}"',"for_all":false}'
+#   echo -e "\n✔ Пользователь $ID_USER обработан"
+# #  echo "URL: https://timeweb.cloud/api/v1/databases/${DB_ID}/admins/${ID_USER}"
 
-done
+# done
 
-sleep 5
+on_prava
 
-test_query_from_gen_user "CREATE" "CREATE DATABASE test_privs;"
+sleep 15
+
+test_query_from_gen_user "CREATE DATABASE" "CREATE DATABASE test_privs;"
 # CREATE
 test_query_from_gen_user "CREATE" "CREATE TABLE test_table (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -217,32 +220,32 @@ test_query_from_gen_user "CREATE" "CREATE TABLE test_table (
 );"
 
 # INSERT
-test_query_from_user "INSERT" "SELECT * FROM test_table;"
+test_query_from_gen_user "INSERT" "SELECT * FROM test_table;"
 
 # SELECT
-test_query_from_user "SELECT" "SELECT * FROM test_table;"
+test_query_from_gen_user "SELECT" "SELECT * FROM test_table;"
 
 # UPDATE
-test_query_from_user "UPDATE" "UPDATE test_table SET value = 99 WHERE name = 'alpha';"
+test_query_from_gen_user "UPDATE" "UPDATE test_table SET value = 99 WHERE name = 'alpha';"
 
 #DELETE
-test_query_from_user "DELETE" "DELETE FROM test_table WHERE name = 'beta';"
+test_query_from_gen_user "DELETE" "DELETE FROM test_table WHERE name = 'beta';"
 
 #CREATE_VIEW
-test_query_from_user "CREATE_VIEW" "CREATE VIEW test_view AS SELECT id, name FROM test_table;"
+test_query_from_gen_user "CREATE_VIEW" "CREATE VIEW test_view AS SELECT id, name FROM test_table;"
 
 # SHOW_VIEW
 test_query_from_gen_user "SHOW_VIEW" "SHOW CREATE VIEW test_view;"
 
-test_query_from_user "INDEX" "DROP INDEX idx_value ON test_table(valye); DROP INDEX idx_value ON test_table;"
+test_query_from_gen_user "INDEX" "DROP INDEX idx_value ON test_table(valye); DROP INDEX idx_value ON test_table;"
 
 test_query_from_gen_user "ALTER" "ALTER TABLE test_table ADD COLUMN updated_at TIMESTAMP NULL;"
 
 # LOCK_TABLES
-test_query_from_user "LOCK_TABLES" "LOCK TABLES test_table READ; UNLOCK TABLES;"
+test_query_from_gen_user "LOCK_TABLES" "LOCK TABLES test_table READ; UNLOCK TABLES;"
 
 # REFERENCES
-test_query_from_user "REFERENCES" "CREATE TABLE ref_table (
+test_query_from_gen_user "REFERENCES" "CREATE TABLE ref_table (
   id INT PRIMARY KEY,
   test_id INT,
   FOREIGN KEY (test_id) REFERENCES test_table(id)

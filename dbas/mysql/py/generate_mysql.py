@@ -29,7 +29,7 @@ DB = {
     "host": "localhost",
     "port": 3306,
     "user": "gen_user",
-    "password": "Passwd123",
+    "password": "pass",
     "database": "default_db",
     "charset": "utf8mb4",
     "cursorclass": pymysql.cursors.Cursor,
