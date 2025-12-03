@@ -26,16 +26,44 @@ HEADERS = {
 # Базы данных
 # ==========================
 databases_pg = [
-    ("PostgreSQL 14 api prod", "postgres14", 1175),
-    ("PostgreSQL 15 api prod", "postgres15", 1175),
-    ("PostgreSQL 16 api prod", "postgres16", 1175),
-    ("PostgreSQL 17 api prod", "postgres17", 1175),
-    ("PostgreSQL 18 api prod", "postgres18", 1175)
+    ("PostgreSQL 14 api-prod", "postgres14", 1175),
+    ("PostgreSQL 15 api-prod", "postgres15", 1175),
+    ("PostgreSQL 16 api-prod", "postgres16", 1175),
+    ("PostgreSQL 17 api-prod", "postgres17", 1175),
+    ("PostgreSQL 18 api-prod", "postgres18", 1175)
 ]
 
 databases_mysql = [
-    ("MySQL 8.0 api prod", "mysql", 519),
-    ("MySQL 8.4 api prod", "mysql8_4", 519)
+    ("MySQL 8.0 api-prod", "mysql", 519),
+    ("MySQL 8.4 api-prod", "mysql8_4", 519)
+]
+
+databases_redis = [
+    ("Redis 7 api-prod", "redis7", 0),
+    ("Redis 8.1 api-prod", "redis8_1", 0)
+]
+
+databases_mongodb = [
+    ("MongoDB 7 api-prod", "mongodb7", 0),
+    ("MongoDB 8.0 api-prod", "mongodb8_0", 0)
+]
+
+databases_opensearch = [
+    ("OpenSearch 2.19.1 api-prod", "opensearch2_19", 0)
+]
+
+databases_clickhouse = [
+    ("ClickHouse 23.10.1 api-prod", "clickhouse", 0),
+    ("ClickHouse 24.8.14 api-prod", "clickhouse24", 0),
+    ("ClickHouse 25.1.6 api-prod", "clickhouse25", 0)
+]
+
+databases_kafka = [
+    ("Kafka 3.5.1 api-prod", "kafka", 0)
+]
+
+databases_rabbitmq = [
+    ("RabbitMQ 4.0 api-prod", "rabbitmq4_0", 0)
 ]
 
 # ==========================
@@ -86,7 +114,7 @@ def find_first_free_ip():
     return None
 
 
-def create_database(db_name, db_type, preset_id, local_ip, floating_ip, is_cluster=False):
+def create_database(db_name, db_type, preset_id, local_ip, floating_ip, is_cluster=False, hard_dbaas=False):
     """Создает базу данных через API."""
     url = "https://timeweb.cloud/api/v1/databases"
 
@@ -95,15 +123,15 @@ def create_database(db_name, db_type, preset_id, local_ip, floating_ip, is_clust
         "type": db_type,
         "configuration": {
             "configurator_id": 45,
-            "cpu": 1,
-            "ram": 1024,
-            "disk": 10240
+            "cpu": 2,
+            "ram": 2048,
+            "disk": 20480
         },
         "availability_zone": AVAILABILITY_ZONE,
         "hash_type": "caching_sha2",
         "project_id": PROJECT_ID,
         "admin": {
-            "password": "Passwd123",
+            "password": "Passwd+++123",
             "for_all": False
         },
         "network": {
@@ -114,7 +142,15 @@ def create_database(db_name, db_type, preset_id, local_ip, floating_ip, is_clust
     }
 
     if is_cluster:
+        payload["name"] += "_cl"
         payload["replication"] = {"count": 3}
+    if hard_dbaas:
+        payload["configuration"] = {
+            "configurator_id": 45,
+            "cpu": 4,
+            "ram": 8192,
+            "disk": 20480
+        }
 
     response = requests.post(url, headers=HEADERS, json=payload)
     data = response.json()
@@ -131,10 +167,13 @@ def show_menu():
     print("\nВыберите вариант создания баз данных:\n")
     print("1 — Только PostgreSQL (single)")
     print("2 — Только MySQL (single)")
-    print("3 — Все базы (single)")
+    print("3 — Все базы основные (single)")
     print("4 — Только PostgreSQL (cluster)")
     print("5 — Только MySQL (cluster)")
-    print("6 — Все базы (cluster)")
+    print("6 — Все базы основные (cluster)")
+    print("7 — Все базы тяжелые (single)")
+    print("8 — Все базы легкие (single)")
+
     print("0 — Выход")
 
     choice = input("\nВаш выбор: ").strip()
@@ -155,21 +194,36 @@ def main():
     if choice == "1":
         selected_dbs = databases_pg
         is_cluster = False
+        hard_dbaas = False
     elif choice == "2":
         selected_dbs = databases_mysql
         is_cluster = False
+        hard_dbaas = False
     elif choice == "3":
         selected_dbs = databases_pg + databases_mysql
         is_cluster = False
+        hard_dbaas = False
     elif choice == "4":
         selected_dbs = databases_pg
         is_cluster = True
+        hard_dbaas = False
     elif choice == "5":
         selected_dbs = databases_mysql
         is_cluster = True
+        hard_dbaas = False
     elif choice == "6":
         selected_dbs = databases_pg + databases_mysql
         is_cluster = True
+        hard_dbaas = False
+    elif choice == "7":
+        selected_dbs = databases_opensearch + databases_clickhouse + databases_kafka + databases_rabbitmq
+        is_cluster = False
+        hard_dbaas = True
+    elif choice == "8":
+        selected_dbs = databases_pg + databases_mysql + databases_redis + databases_mongodb
+        is_cluster = False
+        hard_dbaas = False
+
     else:
         print("Неверный выбор.")
         sys.exit(1)
@@ -186,7 +240,7 @@ def main():
         print(f"\nСоздание {'кластера' if is_cluster else 'базы'} {db_name} ({db_type})")
         print(f"floating IP: {floating_ip}, local IP: {local_ip}")
 
-        create_database(db_name, db_type, preset_id, local_ip, floating_ip, is_cluster=is_cluster)
+        create_database(db_name, db_type, preset_id, local_ip, floating_ip, is_cluster=is_cluster, hard_dbaas=hard_dbaas)
 
 
 if __name__ == "__main__":
