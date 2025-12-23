@@ -15,7 +15,8 @@ from typing import Dict, List, Optional, Tuple
 
 import boto3
 from botocore.config import Config as BotoConfig
-from botocore.exceptions import EndpointConnectionError
+from botocore.exceptions import ClientError, EndpointConnectionError
+from botocore.client import Config as BotocoreClientConfig
 
 # pip install python-dotenv
 from dotenv import find_dotenv, load_dotenv, set_key
@@ -25,14 +26,7 @@ from dotenv import find_dotenv, load_dotenv, set_key
 # .env bootstrap (interactive)
 # ----------------------------
 def ensure_env(dotenv_filename: str = ".env", logger: Optional[logging.Logger] = None) -> str:
-    """
-    Loads .env if present; if required keys are missing, asks interactively and saves to .env.
-    Also sets os.environ so values are available in the current process.
-    python-dotenv supports load_dotenv() and set_key() for this. [web:75][web:77]
-    """
     dotenv_path = find_dotenv(dotenv_filename, usecwd=True) or os.path.join(os.getcwd(), dotenv_filename)
-
-    # Do not override already-set OS env vars by default. [web:75]
     load_dotenv(dotenv_path, override=False)
 
     def have(k: str) -> bool:
@@ -40,22 +34,19 @@ def ensure_env(dotenv_filename: str = ".env", logger: Optional[logging.Logger] =
         return v is not None and str(v).strip() != ""
 
     def save(k: str, v: str):
-        set_key(dotenv_path, k, v)  # writes into .env file [web:77]
+        set_key(dotenv_path, k, v)
         os.environ[k] = v
 
     def ask(k: str, prompt: str, secret: bool = False, default: Optional[str] = None, optional: bool = False):
         if have(k):
             return
 
+        p = prompt
         if default is not None:
-            prompt = f"{prompt} (default: {default})"
-        prompt += ": "
+            p += f" (default: {default})"
+        p += ": "
 
-        if secret:
-            v = getpass(prompt).strip()
-        else:
-            v = input(prompt).strip()
-
+        v = getpass(p).strip() if secret else input(p).strip()
         if not v and default is not None:
             v = default
 
@@ -68,12 +59,12 @@ def ensure_env(dotenv_filename: str = ".env", logger: Optional[logging.Logger] =
         if logger:
             logger.info(f"Saved {k} to {dotenv_path}")
 
-    # --- S3 provider settings (Timeweb Cloud example) ---
-    ask("S3_ENDPOINT_URL", "S3 endpoint URL (e.g. https://s3.twcstorage.ru)", default="https://s3.twcstorage.ru")
-    ask("AWS_DEFAULT_REGION", "Region (e.g. ru-1)", default="ru-1")
+    # Timeweb Cloud defaults (you can overwrite in .env)
+    ask("S3_ENDPOINT_URL", "S3 endpoint URL", default="https://s3.twcstorage.ru")
+    ask("AWS_DEFAULT_REGION", "Region", default="ru-1")
     ask("S3_ADDRESSING_STYLE", "S3 addressing style (path|virtual|auto)", default="path")
 
-    # --- Credentials (skip these if you use AWS_PROFILE instead) ---
+    # If using AWS_PROFILE, you can avoid storing long-lived keys in .env
     if not have("AWS_PROFILE"):
         ask("AWS_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID")
         ask("AWS_SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY", secret=True)
@@ -111,10 +102,6 @@ def setup_logger(log_file: str, level: str = "INFO") -> logging.Logger:
 # Rate limiting (token bucket)
 # ----------------------------
 class TokenBucket:
-    """
-    Thread-safe token bucket limiter for bytes/sec.
-    If rate_bytes_per_sec is None or 0 => unlimited.
-    """
     def __init__(self, rate_bytes_per_sec: Optional[float]):
         self.rate = float(rate_bytes_per_sec or 0.0)
         self.capacity = self.rate if self.rate > 0 else 0.0
@@ -134,7 +121,6 @@ class TokenBucket:
                 self.updated = now
 
                 self.tokens = min(self.capacity, self.tokens + elapsed * self.rate)
-
                 if self.tokens >= need:
                     self.tokens -= need
                     return
@@ -146,38 +132,6 @@ class TokenBucket:
                 time.sleep(sleep_s)
             else:
                 time.sleep(0)
-
-
-# ----------------------------
-# Generated stream (no disk)
-# ----------------------------
-class GeneratedStream:
-    """
-    File-like object that generates bytes on the fly up to total_size.
-    It throttles reads using a TokenBucket.
-    """
-    def __init__(self, total_size: int, limiter: TokenBucket, chunk_size: int, pattern: bytes = b"\0"):
-        self.remaining = int(total_size)
-        self.limiter = limiter
-        self.chunk_size = int(chunk_size)
-        self.pattern = pattern if pattern else b"\0"
-        self._lock = threading.Lock()
-
-    def read(self, n: int = -1) -> bytes:
-        with self._lock:
-            if self.remaining <= 0:
-                return b""
-            if n is None or n < 0:
-                n = self.chunk_size
-            n = min(n, self.chunk_size, self.remaining)
-
-            self.limiter.acquire(n)
-            self.remaining -= n
-
-        if len(self.pattern) == 1:
-            return self.pattern * n
-        reps = (n + len(self.pattern) - 1) // len(self.pattern)
-        return (self.pattern * reps)[:n]
 
 
 # ----------------------------
@@ -201,8 +155,20 @@ def now_tag() -> str:
     return dt.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
 
 
+def normalize_prefix(prefix: str) -> str:
+    # never allow leading slash in key prefix
+    p = (prefix or "").strip()
+    p = p.strip("/")
+    return p
+
+
+def make_key(prefix: str, name: str) -> str:
+    p = normalize_prefix(prefix)
+    return f"{p}/{name}" if p else name
+
+
 # ----------------------------
-# Multipart upload
+# Multipart upload (bytes parts)
 # ----------------------------
 def multipart_upload_object(
     s3,
@@ -212,11 +178,19 @@ def multipart_upload_object(
     total_size: int,
     part_size: int,
     upload_limiter: TokenBucket,
-    io_chunk_size: int,
     parallel_parts: int,
+    io_chunk_size: int,
     extra_args: Optional[dict] = None,
 ) -> Dict:
+    """
+    Upload using explicit multipart upload where each part is sent as bytes of exact length.
+    This avoids provider issues with streaming bodies and missing/incorrect Content-Length.
+    """
     extra_args = extra_args or {}
+
+    if part_size < 5 * 1024 * 1024:
+        raise ValueError("part_size must be >= 5 MiB (except last part).")
+
     parts_count = int(math.ceil(total_size / part_size))
     logger.info(f"UPLOAD start bucket={bucket} key={key} size={total_size}B parts={parts_count} part_size={part_size}B parallel_parts={parallel_parts}")
 
@@ -226,40 +200,55 @@ def multipart_upload_object(
 
     etags: Dict[int, str] = {}
     last_log_t = time.monotonic()
+    uploaded_parts: Dict[int, int] = {}
+    uploaded_lock = threading.Lock()
+
+    # Pre-alloc one chunk pattern to build parts quickly without per-byte operations
+    pattern = b"\0" * min(io_chunk_size, part_size)
+
+    def build_part_bytes(size: int) -> bytes:
+        # throttle as if we're "producing/sending" bytes
+        # done in chunks so limiter works smoothly
+        out = bytearray()
+        remaining = size
+        while remaining > 0:
+            take = min(remaining, len(pattern))
+            upload_limiter.acquire(take)
+            out.extend(pattern[:take])
+            remaining -= take
+        return bytes(out)
 
     def upload_one_part(part_number: int) -> Tuple[int, str, int, float]:
         start = (part_number - 1) * part_size
         this_size = min(part_size, total_size - start)
 
-        body = GeneratedStream(total_size=this_size, limiter=upload_limiter, chunk_size=io_chunk_size)
+        data = build_part_bytes(this_size)
+
         pt0 = time.monotonic()
         r = s3.upload_part(
             Bucket=bucket,
             Key=key,
             UploadId=upload_id,
             PartNumber=part_number,
-            Body=body,
+            Body=data,
         )
         pt1 = time.monotonic()
         return part_number, r["ETag"], this_size, (pt1 - pt0)
 
     try:
         if parallel_parts <= 1:
-            uploaded = 0
             for pn in range(1, parts_count + 1):
                 part_number, etag, this_size, _dt_s = upload_one_part(pn)
                 etags[part_number] = etag
-                uploaded += this_size
+                uploaded_parts[part_number] = this_size
 
                 now = time.monotonic()
                 if now - last_log_t >= 2.0:
+                    uploaded = sum(uploaded_parts.values())
                     rate = uploaded / max(0.001, (now - t0))
                     logger.info(f"UPLOAD progress key={key} uploaded={uploaded}B/{total_size}B avg_rate={human_bytes(rate)}/s")
                     last_log_t = now
         else:
-            uploaded_lock = threading.Lock()
-            uploaded_parts: Dict[int, int] = {}
-
             with cf.ThreadPoolExecutor(max_workers=parallel_parts) as ex:
                 futs = [ex.submit(upload_one_part, pn) for pn in range(1, parts_count + 1)]
                 for fut in cf.as_completed(futs):
@@ -267,10 +256,10 @@ def multipart_upload_object(
                     etags[part_number] = etag
                     with uploaded_lock:
                         uploaded_parts[part_number] = this_size
-                        uploaded = sum(uploaded_parts.values())
 
                     now = time.monotonic()
                     if now - last_log_t >= 2.0:
+                        uploaded = sum(uploaded_parts.values())
                         rate = uploaded / max(0.001, (now - t0))
                         logger.info(f"UPLOAD progress key={key} uploaded={uploaded}B/{total_size}B avg_rate={human_bytes(rate)}/s")
                         last_log_t = now
@@ -365,7 +354,7 @@ def parse_args():
     p.add_argument("--download-mbps", type=float, default=0.0, help="Download speed limit in Mbps (0 = unlimited)")
 
     p.add_argument("--parallel-parts", type=int, default=1, help="Upload parts in parallel (threads). Default 1.")
-    p.add_argument("--io-chunk-mb", type=int, default=8, help="Internal upload stream read chunk size in MiB. Default 8.")
+    p.add_argument("--io-chunk-mb", type=int, default=8, help="Internal bytes build chunk size in MiB. Default 8.")
     p.add_argument("--download-chunk-mb", type=int, default=8, help="Download read chunk size in MiB. Default 8.")
     p.add_argument("--download-cycles", type=int, default=3, help="How many download cycles per uploaded object")
 
@@ -378,19 +367,18 @@ def main():
     args = parse_args()
     logger = setup_logger(args.log_file, args.log_level)
 
+    # Реально включаем debug botocore (будет много строк; лучше писать в файл)
+    boto3.set_stream_logger("botocore", level=logging.DEBUG)  # [web:195]
+    logging.getLogger("urllib3").setLevel(logging.INFO)       # [web:190]
+
     dotenv_used = ensure_env(logger=logger)
     logger.info(f"Using dotenv file: {dotenv_used}")
 
-    # Read final connection settings from environment (filled by .env or OS env)
     endpoint_url = os.getenv("S3_ENDPOINT_URL")
     region = os.getenv("AWS_DEFAULT_REGION") or os.getenv("AWS_REGION")
     addr_style = os.getenv("S3_ADDRESSING_STYLE", "path")
 
-    # Validate part size
     part_size = args.part_size_mb * 1024 * 1024
-    if part_size < 5 * 1024 * 1024:
-        raise SystemExit("--part-size-mb must be >= 5 (S3 multipart minimum part size is 5 MiB except last).")
-
     sizes_gb = [int(x.strip()) for x in args.sizes_gb.split(",") if x.strip()]
     sizes_bytes = [gb * 1024**3 for gb in sizes_gb]
 
@@ -405,10 +393,12 @@ def main():
         f"part_size={part_size}B upload_mbps={args.upload_mbps} download_mbps={args.download_mbps} parallel_parts={args.parallel_parts}"
     )
 
-    boto_cfg = BotoConfig(
+    boto_cfg = BotocoreClientConfig(
+        signature_version="s3v4",
         retries={"max_attempts": 10, "mode": "standard"},
         s3={"addressing_style": addr_style},
     )
+    logger.info(f"CONFIG sigv={boto_cfg.signature_version} addr_style={addr_style} endpoint_url={endpoint_url} region={region}")
 
     s3 = boto3.client(
         "s3",
@@ -417,15 +407,15 @@ def main():
         config=boto_cfg,
     )
 
-    # Sanity log
     logger.info(f"S3 client endpoint resolved to: {getattr(s3.meta, 'endpoint_url', None)}")
 
     uploaded_keys: List[Tuple[str, int]] = []
 
-    # Upload phase
     for size_b in sizes_bytes:
         for i in range(args.files_per_size):
-            key = f"{args.prefix.rstrip('/')}/test_{size_b // (1024**3)}GB_{now_tag()}_{i:02d}.bin"
+            obj_name = f"test_{size_b // (1024**3)}GB_{now_tag()}_{i:02d}.bin"
+            key = make_key(args.prefix, obj_name)
+
             multipart_upload_object(
                 s3=s3,
                 logger=logger,
@@ -434,13 +424,12 @@ def main():
                 total_size=size_b,
                 part_size=part_size,
                 upload_limiter=upload_limiter,
-                io_chunk_size=args.io_chunk_mb * 1024 * 1024,
                 parallel_parts=args.parallel_parts,
+                io_chunk_size=args.io_chunk_mb * 1024 * 1024,
                 extra_args={},
             )
             uploaded_keys.append((key, size_b))
 
-    # Download phase (cycles)
     for key, _size_b in uploaded_keys:
         for cycle in range(1, args.download_cycles + 1):
             logger.info(f"DOWNLOAD cycle_start key={key} cycle={cycle}/{args.download_cycles}")
@@ -456,11 +445,12 @@ def main():
 
     logger.info("DONE")
 
-
 if __name__ == "__main__":
     try:
         main()
     except EndpointConnectionError as e:
-        # Usually means wrong endpoint_url/DNS/network; keep message explicit.
         print(f"EndpointConnectionError: {e}", file=sys.stderr)
+        raise
+    except ClientError as e:
+        print(f"ClientError: {e}", file=sys.stderr)
         raise
