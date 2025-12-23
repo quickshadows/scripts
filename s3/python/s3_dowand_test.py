@@ -395,3 +395,18 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+""" 
+python3 s3_load_test.py \
+  --bucket 31d5eb06-test-download \
+  --prefix loadtest/ \
+  --sizes-gb 1,10,100 \
+  --files-per-size 1 \
+  --part-size-mb 64 \
+  --parallel-parts 4 \
+  --upload-mbps 1000 \
+  --download-mbps 1000 \
+  --download-cycles 5 \
+  --log-file ./s3_load_test.log \
+  --log-level INFO
+ """
