@@ -12,6 +12,75 @@ from typing import Dict, List, Optional, Tuple
 
 import boto3
 from botocore.config import Config as BotoConfig
+from getpass import getpass
+
+from dotenv import find_dotenv, load_dotenv, set_key  # pip install python-dotenv
+
+
+def ensure_env(logger=None, dotenv_path: str = ".env"):
+    """
+    1) Загружает .env если есть
+    2) Если обязательных параметров нет — спрашивает и сохраняет в .env
+    3) Кладёт значения в os.environ, чтобы они были доступны в текущем запуске
+    """
+    # find_dotenv() ищет .env выше по дереву; если не найден — вернёт пустую строку. [web:75]
+    found = find_dotenv(dotenv_path, usecwd=True) or dotenv_path
+
+    # Важно: load_dotenv по умолчанию НЕ перетирает уже заданные переменные окружения. [web:75]
+    load_dotenv(found, override=False)
+
+    def have(k: str) -> bool:
+        v = os.getenv(k)
+        return v is not None and str(v).strip() != ""
+
+    def ask(k: str, prompt: str, secret: bool = False, default: str = "") -> str:
+        if have(k):
+            return os.getenv(k)  # уже есть — не спрашиваем
+
+        p = prompt
+        if default:
+            p += f" (default: {default})"
+        p += ": "
+
+        val = getpass(p) if secret else input(p)
+        val = val.strip()
+        if not val and default:
+            val = default
+
+        if not val:
+            raise SystemExit(f"Missing required value for {k}")
+
+        # set_key пишет в .env, но не обновляет os.environ автоматически в этом же процессе. [web:77][web:92]
+        set_key(found, k, val)
+        os.environ[k] = val
+        if logger:
+            logger.info(f"Saved {k} to {found}")
+        return val
+
+    # --- обязательные для не-AWS S3 (как у вас) ---
+    ask("S3_ENDPOINT_URL", "S3 endpoint URL, e.g. https://storage.example.com", secret=False)
+
+    # region лучше иметь всегда (для AWS обязателен, для S3-compatible часто тоже нужен). [web:24]
+    ask("AWS_DEFAULT_REGION", "AWS region / S3 region name", secret=False, default="ru-1")
+
+    # addressing style: path/virtual/auto (для многих S3-compatible нужен path). [web:47]
+    ask("S3_ADDRESSING_STYLE", "S3 addressing style (path|virtual|auto)", secret=False, default="path")
+
+    # --- креды (если вы НЕ используете AWS_PROFILE) ---
+    # Если планируете пользоваться профилями awscli, эти 2 строки можно не заполнять. [web:21]
+    ask("AWS_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID", secret=False)
+    ask("AWS_SECRET_ACCESS_KEY", "AWS_SECRET_ACCESS_KEY", secret=True)
+
+    # Session token опционален (только для временных кредов)
+    if not have("AWS_SESSION_TOKEN"):
+        token = input("AWS_SESSION_TOKEN (optional, press Enter to skip): ").strip()
+        if token:
+            set_key(found, "AWS_SESSION_TOKEN", token)
+            os.environ["AWS_SESSION_TOKEN"] = token
+            if logger:
+                logger.info(f"Saved AWS_SESSION_TOKEN to {found}")
+
+    return found
 
 
 # ----------------------------
@@ -324,6 +393,9 @@ def parse_args():
 def main():
     args = parse_args()
     logger = setup_logger(args.log_file, args.log_level)
+
+    dotenv_used = ensure_env(logger=logger)
+    logger.info(f"Using dotenv file: {dotenv_used}")
 
     # Validate
     part_size = args.part_size_mb * 1024 * 1024
