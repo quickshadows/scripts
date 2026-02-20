@@ -1,0 +1,17 @@
+# Конфигурация для development окружения
+environment: "dev"
+
+# Базы данных для development
+databases:
+  postgres:
+    - name: "PostgreSQL-test dev"
+      type: "postgres14"
+      preset_id: 1175
+  
+  mysql:
+    - name: "MySQL-test dev"
+      type: "mysql"
+      preset_id: 519
+
+# Настройки автоматических бэкапов для development (отключены)
+auto_backups: null

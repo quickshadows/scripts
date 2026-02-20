@@ -37,18 +37,16 @@ create_database() {
     -d "{
       \"name\": \"$db_name\",
       \"type\": \"$db_type\",
-      \"preset_id\": $preset_id,
+      \"configuration\": {
+        \"configurator_id\": 45,
+        \"cpu\": 1,
+        \"ram\" 1,
+        \"disk\": 10240},
       \"availability_zone\": \"spb-3\",
       \"hash_type\": \"caching_sha2\",
       \"project_id\": 103757,
-      \"auto_backups\": {
-        \"copy_count\": 1,
-        \"creation_start_at\": \"2025-08-18T13:51:32.132Z\",
-        \"interval\": \"month\",
-        \"day_of_week\": 1
-      },
       \"admin\": {
-        \"password\": \"Pass\",
+        \"password\": \"Passwd123\",
         \"for_all\": false
       },
       \"network\": {
@@ -101,11 +99,7 @@ find_first_free_ip() {
 
 # --- Основная логика ---
 databases=(
-  "PostgreSQL 14 api prod postgres14 1175"
-  "PostgreSQL 15 api prod postgres15 1175"
-  "PostgreSQL 16 api prod postgres16 1175"
-  "PostgreSQL 17 api prod postgres17 1175"
-  "PostgreSQL 18 api prod postgres18 1175"
+  "PostgreSQL-412903 14 api prod postgres14 1175"
 )
 
 for db in "${databases[@]}"; do

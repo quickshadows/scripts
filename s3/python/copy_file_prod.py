@@ -4,14 +4,14 @@ import boto3
 #session = boto3.Session(region_name='ru-1')
 s3_client = boto3.client(
     's3',
-    endpoint_url=''
+    endpoint_url='https://s3.twcstorage.ru'
 )
 
 # Пример использования: копирование объекта
-source_bucket_name = ''
-source_key = ''
-destination_bucket_name = ''
-destination_key = ''
+source_bucket_name = '31d5eb06-file-storage'
+source_key = 'twc-dbass-config.yaml'
+destination_bucket_name = '50dda1c9-test-copy'
+destination_key = 'twc-dbass-config.yaml'
 
 copy_source = {
     'Bucket': source_bucket_name,

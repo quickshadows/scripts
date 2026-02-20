@@ -1,0 +1,66 @@
+# Базовая конфигурация для работы с базами данных
+network_id: "network-3654798e575f4dd3b9ad3e9dec940ead"
+project_id: 103757
+availability_zone: "spb-3"
+subnet_base: "192.168.0"
+
+# Конфигурация по умолчанию для БД
+default_config:
+  configurator_id: 45
+  cpu: 1
+  ram: 1024
+  disk: 10240
+
+# Типы баз данных и их пресеты
+database_types:
+  # MySQL
+  mysql:
+    preset_id: 519
+    hash_type: "caching_sha2"
+  mysql8_4:
+    preset_id: 519
+    hash_type: "caching_sha2"
+  
+  # PostgreSQL
+  postgres14:
+    preset_id: 1175
+  postgres15:
+    preset_id: 1175
+  postgres16:
+    preset_id: 1175
+  postgres17:
+    preset_id: 1175
+  postgres18:
+    preset_id: 1175
+  
+  # Redis
+  redis7:
+    preset_id: 541
+  redis8_1:
+    preset_id: 541
+  
+  # MongoDB
+  mongodb7:
+    preset_id: 515
+  mongodb8_0:
+    preset_id: 515
+  
+  # OpenSearch
+  opensearch2_19:
+    preset_id: 747
+  
+  # ClickHouse
+  clickhouse:
+    preset_id: 1229
+  clickhouse24:
+    preset_id: 1229
+  clickhouse25:
+    preset_id: 1229
+  
+  # Kafka
+  kafka:
+    preset_id: 759
+  
+  # RabbitMQ
+  rabbitmq4_0:
+    preset_id: 805

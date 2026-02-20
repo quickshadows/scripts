@@ -11,10 +11,10 @@ import string
 from botocore.exceptions import ClientError
 
 # ================== НАСТРОЙКИ ==================
-BUCKET_NAME = "BUCKET_NAME"
-FILE_PATH = "/mnt/dbaas/tmp/test-bigfile.bin"
-FILE_SIZE_GB =31  # можно менять 10-20
-PART_SIZE_MB = 2000  # размер части для multipart
+BUCKET_NAME = "31d5eb06-file-storage"
+FILE_PATH = "./test-bigfile.bin"
+FILE_SIZE_GB =1  # можно менять 10-20
+PART_SIZE_MB = 50  # размер части для multipart
 REGION = "ru-1"
 ENDPOINT_URL = "https://s3.twcstorage.ru"
 
@@ -68,8 +68,8 @@ s3 = boto3.client(
     "s3",
     endpoint_url=ENDPOINT_URL,
     region_name=REGION,
-    aws_access_key_id="AccessKey",
-    aws_secret_access_key="SecretKey",
+    aws_access_key_id="X6MXFPLSKGH15KXJUE56",
+    aws_secret_access_key="msNpqANugBAfsbpGzDAYA4eHvgGxiYNjHZAnGyA3",
 )
 
 

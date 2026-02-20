@@ -1,0 +1,80 @@
+# Конфигурация для staging окружения
+environment: "stage"
+
+# API endpoints (для stage создание БД идет через отдельный endpoint)
+api_base_url_v1: "https://api.timeweb.cloud/api/v1"
+api_base_url_v2: "https://api.timeweb.cloud/api/v2"
+databases_url: "https://cloud-staging.kube.timeweb.net/api/v1/databases"
+
+# Базы данных для staging
+databases:
+  postgres:
+    - name: "PostgreSQL 14 api stage"
+      type: "postgres14"
+      preset_id: 1175
+    - name: "PostgreSQL 15 api stage"
+      type: "postgres15"
+      preset_id: 1175
+    - name: "PostgreSQL 16 api stage"
+      type: "postgres16"
+      preset_id: 1175
+    - name: "PostgreSQL 17 api stage"
+      type: "postgres17"
+      preset_id: 1175
+  
+  mysql:
+    - name: "MySQL80 api stage"
+      type: "mysql"
+      preset_id: 519
+    - name: "MySQL84 api stage"
+      type: "mysql8_4"
+      preset_id: 519
+  
+  redis:
+    - name: "redis7 api stage"
+      type: "redis7"
+      preset_id: 541
+    - name: "redis81 api stage"
+      type: "redis8_1"
+      preset_id: 541
+  
+  mongodb:
+    - name: "mongodb7 api stage"
+      type: "mongodb7"
+      preset_id: 515
+    - name: "mongodb8 api stage"
+      type: "mongodb8_0"
+      preset_id: 515
+  
+  opensearch:
+    - name: "opensearch2_19 api stage"
+      type: "opensearch2_19"
+      preset_id: 747
+  
+  clickhouse:
+    - name: "clickhouse api stage"
+      type: "clickhouse"
+      preset_id: 1229
+    - name: "clickhouse24 api stage"
+      type: "clickhouse24"
+      preset_id: 1229
+    - name: "clickhouse25 api stage"
+      type: "clickhouse25"
+      preset_id: 1229
+  
+  kafka:
+    - name: "kafka api stage"
+      type: "kafka"
+      preset_id: 759
+  
+  rabbitmq:
+    - name: "rabbitmq4_0 api stage"
+      type: "rabbitmq4_0"
+      preset_id: 805
+
+# Настройки автоматических бэкапов для staging
+auto_backups:
+  copy_count: 1
+  creation_start_at: "2025-08-18T13:51:32.132Z"
+  interval: "month"
+  day_of_week: 1

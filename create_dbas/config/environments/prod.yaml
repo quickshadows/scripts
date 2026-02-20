@@ -1,0 +1,82 @@
+# Конфигурация для production окружения
+environment: "prod"
+
+# API endpoints (можно переопределять при необходимости)
+api_base_url_v1: "https://api.timeweb.cloud/api/v1"
+api_base_url_v2: "https://api.timeweb.cloud/api/v2"
+
+# Базы данных для production
+databases:
+  postgres:
+    - name: "PostgreSQL-log 14 api prod"
+      type: "postgres14"
+      preset_id: 1175
+    - name: "PostgreSQL-log 15 api prod"
+      type: "postgres15"
+      preset_id: 1175
+    - name: "PostgreSQL-log 16 api prod"
+      type: "postgres16"
+      preset_id: 1175
+    - name: "PostgreSQL-log 17 api prod"
+      type: "postgres17"
+      preset_id: 1175
+    - name: "PostgreSQL-log 18 api prod"
+      type: "postgres18"
+      preset_id: 1175
+  
+  mysql:
+    - name: "MySQL 8.0 api prod"
+      type: "mysql"
+      preset_id: 519
+    - name: "MySQL 8.4 api prod"
+      type: "mysql8_4"
+      preset_id: 519
+  
+  redis:
+    - name: "redis7 api prod"
+      type: "redis7"
+      preset_id: 541
+    - name: "redis81 api prod"
+      type: "redis8_1"
+      preset_id: 541
+  
+  mongodb:
+    - name: "mongodb7 api prod"
+      type: "mongodb7"
+      preset_id: 515
+    - name: "mongodb8 api prod"
+      type: "mongodb8_0"
+      preset_id: 515
+  
+  opensearch:
+    - name: "opensearch2_19 api prod"
+      type: "opensearch2_19"
+      preset_id: 747
+  
+  clickhouse:
+    - name: "clickhouse api prod"
+      type: "clickhouse"
+      preset_id: 1229
+    - name: "clickhouse24 api prod"
+      type: "clickhouse24"
+      preset_id: 1229
+    - name: "clickhouse25 api prod"
+      type: "clickhouse25"
+      preset_id: 1229
+  
+  kafka:
+    - name: "kafka api prod"
+      type: "kafka"
+      preset_id: 759
+  
+  rabbitmq:
+    - name: "rabbitmq4_0 api prod"
+      type: "rabbitmq4_0"
+      preset_id: 805
+
+# Настройки автоматических бэкапов для production
+auto_backups:
+  copy_count: 1
+  creation_start_at: "2025-08-18T13:51:32.132Z"
+  interval: "month"
+  day_of_week: 1

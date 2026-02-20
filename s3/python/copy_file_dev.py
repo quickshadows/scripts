@@ -8,10 +8,10 @@ s3_client = boto3.client(
 )
 
 # Пример использования: копирование объекта
-source_bucket_name = ''
-source_key = ''
-destination_bucket_name = ''
-destination_key = ''
+source_bucket_name = '1be69fbc-file-storage'
+source_key = 'twc-dbass-config.yaml'
+destination_bucket_name = '50c17271-check-copy'
+destination_key = 'twc-dbass-config.yaml'
 
 copy_source = {
     'Bucket': source_bucket_name,
