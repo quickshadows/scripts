@@ -13,7 +13,7 @@ if not TIMEWEB_CLOUD_TOKEN:
     print("Ошибка: переменная окружения TIMEWEB_CLOUD_TOKEN не установлена.")
     sys.exit(1)
 
-NETWORK_ID = "network-3654798e575f4dd3b9ad3e9dec940ead"
+NETWORK_ID = "network-3396c100bd4d41708f4b4456849ee3e0"
 PROJECT_ID = 103757
 AVAILABILITY_ZONE = "spb-3"
 
@@ -26,44 +26,44 @@ HEADERS = {
 # Базы данных
 # ==========================
 databases_pg = [
-    ("PostgreSQL 14 api-prod", "postgres14", 1175),
-    ("PostgreSQL 15 api-prod", "postgres15", 1175),
-    ("PostgreSQL 16 api-prod", "postgres16", 1175),
-    ("PostgreSQL 17 api-prod", "postgres17", 1175),
-    ("PostgreSQL 18 api-prod", "postgres18", 1175)
+    ("PostgreSQL 14 api-pr-back-19", "postgres14", 1175),
+    ("PostgreSQL 15 api-pr-back-19", "postgres15", 1175),
+    ("PostgreSQL 16 api-pr-back-19", "postgres16", 1175),
+    ("PostgreSQL 17 api-pr-back-19", "postgres17", 1175),
+    ("PostgreSQL 18 api-pr-back-19", "postgres18", 1175)
 ]
 
 databases_mysql = [
-    ("MySQL 8.0 api-prod", "mysql", 519),
-    ("MySQL 8.4 api-prod", "mysql8_4", 519)
+    ("MySQL 8.0 api-pr-back-19", "mysql", 519),
+    ("MySQL 8.4 api-pr-back-19", "mysql8_4", 519)
 ]
 
 databases_redis = [
-    ("Redis 7 api-prod", "redis7", 0),
-    ("Redis 8.1 api-prod", "redis8_1", 0)
+    # ("Redis 7 api-pr-manager03", "redis7", 0),
+    ("Redis 8.1 api-pr-manager03", "redis8_1", 0)
 ]
 
 databases_mongodb = [
-    ("MongoDB 7 api-prod", "mongodb7", 0),
-    ("MongoDB 8.0 api-prod", "mongodb8_0", 0)
+    # ("MongoDB 7 api-pr-manager03", "mongodb7", 0),
+    ("MongoDB 8.0 api-pr-manager03", "mongodb8_0", 0)
 ]
 
 databases_opensearch = [
-    ("OpenSearch 2.19.1 api-prod", "opensearch2_19", 0)
+    ("OpenSearch 2.19.1 api-pr-manager03", "opensearch2_19", 0)
 ]
 
 databases_clickhouse = [
-    ("ClickHouse 23.10.1 api-prod", "clickhouse", 0),
-    ("ClickHouse 24.8.14 api-prod", "clickhouse24", 0),
-    ("ClickHouse 25.1.6 api-prod", "clickhouse25", 0)
+    # ("ClickHouse 23.10.1 api-pr-manager03", "clickhouse", 0),
+    # ("ClickHouse 24.8.14 api-pr-manager03", "clickhouse24", 0),
+    ("ClickHouse 25.1.6 api-pr-manager03", "clickhouse25", 0)
 ]
 
 databases_kafka = [
-    ("Kafka 3.5.1 api-prod", "kafka", 0)
+    ("Kafka 3.5.1 api-pr-manager03", "kafka", 0)
 ]
 
 databases_rabbitmq = [
-    ("RabbitMQ 4.0 api-prod", "rabbitmq4_0", 0)
+    ("RabbitMQ 4.0 api-pr-manager03", "rabbitmq4_0", 0)
 ]
 
 # ==========================
@@ -123,9 +123,9 @@ def create_database(db_name, db_type, preset_id, local_ip, floating_ip, is_clust
         "type": db_type,
         "configuration": {
             "configurator_id": 45,
-            "cpu": 2,
+            "cpu": 1,
             "ram": 2048,
-            "disk": 20480
+            "disk": 35840
         },
         "availability_zone": AVAILABILITY_ZONE,
         "hash_type": "caching_sha2",
@@ -220,7 +220,7 @@ def main():
         is_cluster = False
         hard_dbaas = True
     elif choice == "8":
-        selected_dbs = databases_pg + databases_mysql + databases_redis + databases_mongodb
+        selected_dbs = databases_redis + databases_mongodb
         is_cluster = False
         hard_dbaas = False
 
