@@ -1,0 +1,16 @@
+groups:
+  - name: http_alerts
+    rules:
+      - alert: HTTPNonOKResponse
+        expr: cloud_monitor_http_response_http_response_code >= 400
+        for: 10s
+        labels:
+          severity: critical
+        annotations:
+          description: "HTTP code is {{ $value }}"
+
+      - alert: HTTPTimedOut
+        expr: cloud_monitor_http_response_response_time > 3
+        for: 10s
+        labels:
+          severity: warning

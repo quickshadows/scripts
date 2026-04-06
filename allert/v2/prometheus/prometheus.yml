@@ -1,0 +1,28 @@
+global:
+  scrape_interval: 5s
+
+rule_files:
+  - alerts.yml
+
+scrape_configs:
+  - job_name: 'pushgateway'
+    static_configs:
+      - targets: ['pushgateway:9091']
+
+  - job_name: 'http_ok'
+    metrics_path: /probe
+    static_configs:
+      - targets:
+          - http://http_ok:5678
+
+  - job_name: 'http_500'
+    metrics_path: /probe
+    static_configs:
+      - targets:
+          - http://http_500:5678
+
+  - job_name: 'http_delay'
+    metrics_path: /probe
+    static_configs:
+      - targets:
+          - http://http_delay:8080
