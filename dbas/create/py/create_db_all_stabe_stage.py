@@ -26,25 +26,25 @@ HEADERS = {
 # Базы данных
 # ==========================
 databases_pg = [
-    ("PostgreSQL 14 api-stage", "postgres14", 1175),
-    ("PostgreSQL 15 api-stage", "postgres15", 1175),
-    ("PostgreSQL 16 api-stage", "postgres16", 1175),
-    ("PostgreSQL 17 api-stage", "postgres17", 1175),
-    ("PostgreSQL 18 api-stage", "postgres18", 1175)
+    # ("PostgreSQL 14 api-stage-back13", "postgres14", 1175),
+    # ("PostgreSQL 15 api-stage", "postgres15", 1175),
+    # ("PostgreSQL 16 api-stage-back13", "postgres16", 1175),
+    # ("PostgreSQL 17 api-stage-back13", "postgres17", 1175),
+    ("PostgreSQL 18 api-stage-bootstrap02", "postgres18", 1175)
 ]
 
 databases_mysql = [
-    ("MySQL 8.0 api-stage", "mysql", 519),
-    ("MySQL 8.4 api-stage", "mysql8_4", 519)
+    # ("MySQL 8.0 api-stage-back13", "mysql", 519),
+    ("MySQL 8.4 api-stage-bootstrap02", "mysql8_4", 519)
 ]
 
 databases_redis = [
-    ("Redis 7 api-stage", "redis7", 0),
+    # ("Redis 7 api-stage", "redis7", 0),
     ("Redis 8.1 api-stage", "redis8_1", 0)
 ]
 
 databases_mongodb = [
-    ("MongoDB 7 api-stage", "mongodb7", 0),
+    # ("MongoDB 7 api-stage", "mongodb7", 0),
     ("MongoDB 8.0 api-stage", "mongodb8_0", 0)
 ]
 
@@ -53,8 +53,8 @@ databases_opensearch = [
 ]
 
 databases_clickhouse = [
-    ("ClickHouse 23.10.1 api-stage", "clickhouse", 0),
-    ("ClickHouse 24.8.14 api-stage", "clickhouse24", 0),
+    # ("ClickHouse 23.10.1 api-stage", "clickhouse", 0),
+    # ("ClickHouse 24.8.14 api-stage", "clickhouse24", 0),
     ("ClickHouse 25.1.6 api-stage", "clickhouse25", 0)
 ]
 
@@ -226,7 +226,7 @@ def main():
         is_cluster = False
         hard_dbaas = True
     elif choice == "8":
-        selected_dbs = databases_pg + databases_mysql + databases_redis + databases_mongodb
+        selected_dbs = databases_redis + databases_mongodb
         is_cluster = False
         hard_dbaas = False
 

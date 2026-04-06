@@ -26,44 +26,44 @@ HEADERS = {
 # Базы данных
 # ==========================
 databases_pg = [
-    ("PostgreSQL 14 api-prod", "postgres14", 1175),
-    ("PostgreSQL 15 api-prod", "postgres15", 1175),
-    ("PostgreSQL 16 api-prod", "postgres16", 1175),
-    ("PostgreSQL 17 api-prod", "postgres17", 1175),
-    ("PostgreSQL 18 api-prod", "postgres18", 1175)
+    ("PostgreSQL 14 api-prod-spageti02", "postgres14", 1175),
+    # ("PostgreSQL 15 api-prod", "postgres15", 1175),
+    # ("PostgreSQL 16 api-prod", "postgres16", 1175),
+    # ("PostgreSQL 17 api-prod", "postgres17", 1175),
+    ("PostgreSQL 18 api-prod-spageti02", "postgres18", 1175)
 ]
 
 databases_mysql = [
-    ("MySQL 8.0 api-prod", "mysql", 519),
-    ("MySQL 8.4 api-prod", "mysql8_4", 519)
+    # ("MySQL 8.0 api-prod", "mysql", 519),
+    ("MySQL 8.4 api-prod-spageti02", "mysql8_4", 519)
 ]
 
 databases_redis = [
-    ("Redis 7 api-prod", "redis7", 0),
-    ("Redis 8.1 api-prod", "redis8_1", 0)
+    # ("Redis 7 api-prod", "redis7", 0),
+    ("Redis 8.1 api-prod-spageti02", "redis8_1", 0)
 ]
 
 databases_mongodb = [
-    ("MongoDB 7 api-prod", "mongodb7", 0),
-    ("MongoDB 8.0 api-prod", "mongodb8_0", 0)
+    # ("MongoDB 7 api-prod", "mongodb7", 0),
+    ("MongoDB 8.0 api-prod-spageti02", "mongodb8_0", 0)
 ]
 
 databases_opensearch = [
-    ("OpenSearch 2.19.1 api-prod", "opensearch2_19", 0)
+    ("OpenSearch 2.19.1 api-prod-spageti02", "opensearch2_19", 0)
 ]
 
 databases_clickhouse = [
-    ("ClickHouse 23.10.1 api-prod", "clickhouse", 0),
-    ("ClickHouse 24.8.14 api-prod", "clickhouse24", 0),
-    ("ClickHouse 25.1.6 api-prod", "clickhouse25", 0)
+    # ("ClickHouse 23.10.1 api-prod", "clickhouse", 0),
+    # ("ClickHouse 24.8.14 api-prod", "clickhouse24", 0),
+    ("ClickHouse 25.1.6 api-prod-spageti02", "clickhouse25", 0)
 ]
 
 databases_kafka = [
-    ("Kafka 3.5.1 api-prod", "kafka", 0)
+    ("Kafka 3.5.1 api-prod-spageti02", "kafka", 0)
 ]
 
 databases_rabbitmq = [
-    ("RabbitMQ 4.0 api-prod", "rabbitmq4_0", 0)
+    ("RabbitMQ 4.0 api-prod-spageti02", "rabbitmq4_0", 0)
 ]
 
 # ==========================

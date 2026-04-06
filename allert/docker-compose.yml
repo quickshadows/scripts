@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  test-https:
+    build: .
+    ports: ["8443:8443"]
+#    volumes:
+#      - ./cert.pem:/app/cert-365days.pem
+#      - ./key.pem:/app/key.pem
