@@ -48,8 +48,6 @@ if __name__ == '__main__':
     )
 
 
-#     curl -k -X POST https://localhost:8443/set \
-#   -H "Content-Type: application/json" \
-#   -d '{"code":500}'
+#   curl -k -X POST https://localhost:8443/set -H "Content-Type: application/json"    -d '{"code":500}'
 
 #   curl -k https://localhost:8443/
