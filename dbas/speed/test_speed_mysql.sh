@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Настройки подключения
-MYSQL_HOST="81.19.135.52"
+MYSQL_HOST="83.147.247.105"
 MYSQL_PORT=3306
 MYSQL_USER="gen_user"
-MYSQL_PASSWORD='Pass'
-MYSQL_DB="default_db"
+MYSQL_PASSWORD='Passwd+++123'
+MYSQL_DB="db_panel2"
 
 # Параметры теста
-TABLES=50
+TABLES=5
 TABLE_SIZE=1000000
 THREADS=2
 DURATION=300

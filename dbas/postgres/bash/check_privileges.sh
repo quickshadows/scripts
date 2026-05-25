@@ -12,7 +12,7 @@ fi
 # Конфигурация подключения
 PGUSER="gen_user"
 PGUSER1="user"
-PGPASSWORD="Pass"
+PGPASSWORD="Passwd+++123"
 PGPORT="5432"
 PGDATABASE="default_db"
 SCHEMA="public"
