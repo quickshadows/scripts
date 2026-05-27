@@ -56,15 +56,15 @@ class DatabaseConfig:
 
 DATABASE_GROUPS = {
     "postgres": [
-        DatabaseConfig("PostgreSQL 14 api-stage-patroni-14", "postgres14"),
-        DatabaseConfig("PostgreSQL 15 api-stage-patroni-14", "postgres15"),
-        DatabaseConfig("PostgreSQL 16 api-stage-patroni-14", "postgres16"),
-        DatabaseConfig("PostgreSQL 17 api-stage-patroni-14", "postgres17"),
-        DatabaseConfig("PostgreSQL 18 api-stage-patroni-14", "postgres18"),
+        DatabaseConfig("PostgreSQL 14 api-stage-backup-27", "postgres14"),
+        DatabaseConfig("PostgreSQL 15 api-stage-backup-27", "postgres15"),
+        DatabaseConfig("PostgreSQL 16 api-stage-backup-27", "postgres16"),
+        DatabaseConfig("PostgreSQL 17 api-stage-backup-27", "postgres17"),
+        DatabaseConfig("PostgreSQL 18 api-stage-backup-27", "postgres18"),
     ],
     "mysql": [
-        DatabaseConfig("MySQL 8.0 api-stage-watcher-14", "mysql"),
-        # DatabaseConfig("MySQL 8.4 api-stage-watcher-14", "mysql8_4"),
+        DatabaseConfig("MySQL 8.0 api-stage-backup-27", "mysql"),
+        DatabaseConfig("MySQL 8.4 api-stage-backup-27", "mysql8_4"),
     ],
     "redis": [
         DatabaseConfig("Redis 7 api-stage", "redis7"),
